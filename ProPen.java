@@ -11,7 +11,7 @@ class ProPen {
     public static void main(String[] args) {
         var pen = new Pen();
         pen.setRadius(10);
-        pen.setColor(Color.YELLOW);
+        pen.setColor(Color.pink);
  
         var canvas = new Canvas(pen);
   
@@ -24,7 +24,7 @@ class MainFrame extends JFrame {
         this.setUndecorated(true);
         this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setBackground(new Color(0,0,0,1));
+        this.setBackground(new Color(0,0,0, 1));
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         this.setAlwaysOnTop(true);
         this.add(canvas);
@@ -37,39 +37,63 @@ class Canvas extends JPanel implements MouseListener {
 
     private boolean mousePressed = false;
 
+    private int mouseX = 0;
+    private int mouseY = 0;
+
     Canvas(Pen pen) {
+        this.setDoubleBuffered(false);
         this.addMouseListener(this);
         this.pen = pen;
         this.setBackground(new Color(0,0,0,0));
+        this.traceMouse();
         this.startDrawing();
     }
 
-    public void startDrawing() {
+    private void traceMouse() {
+        var tracingThread = new Thread(new Runnable(){
+            @Override
+            public void run() {
+                for (;;) {
+                var point = MouseInfo.getPointerInfo().getLocation();
+                
+                mouseX = point.x;
+                mouseY = point.y;
+                }
+            }    
+        });
+
+        tracingThread.start();
+    }
+
+    private void startDrawing() {
         var drawingThread = new Thread(new Runnable(){
             @Override
             public void run() {
-                while(true) {
-                    repaint();                    
-                }
+                for(;;) {
+                    repaint();
+                }    
             }
         }, "drawingThread");
 
         drawingThread.start();
-        this.repaint();
     }
 
     public Pen getPen() {
         return this.pen;
     }
 
+    public void setPen(Pen pen) {
+        this.pen = pen;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        if (mousePressed) {
+        if (this.mousePressed){
+            super.paintComponent(g);
+            
             g.setColor(pen.getColor());
             var radius = pen.getRadius();    
-            var point = MouseInfo.getPointerInfo().getLocation();
-            g.fillOval(point.x, point.y, radius, radius);
+            g.fillOval(mouseX, mouseY, radius, radius); 
         }
     }
 
